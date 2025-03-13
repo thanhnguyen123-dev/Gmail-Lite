@@ -1,3 +1,7 @@
-import { handlers } from "~/server/auth";
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import { authConfig } from "~/server/auth/config";
+import NextAuth from "next-auth";
 
-export const { GET, POST } = handlers;
+const handler = NextAuth(authConfig);
+
+export { handler as GET, handler as POST };

@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { type DefaultSession, type NextAuthConfig } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
+import { type DefaultSession, type NextAuthOptions } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import { Adapter } from "next-auth/adapters";
 
 import { db } from "~/server/db";
 
@@ -32,7 +36,10 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    DiscordProvider,
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     /**
      * ...add more providers here.
      *
@@ -43,7 +50,7 @@ export const authConfig = {
      * @see https://next-auth.js.org/providers/github
      */
   ],
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db) as Adapter,
   callbacks: {
     session: ({ session, user }) => ({
       ...session,
@@ -52,5 +59,13 @@ export const authConfig = {
         id: user.id,
       },
     }),
+    redirect: async () => {
+      return "/";
+    },
   },
-} satisfies NextAuthConfig;
+  pages: {
+    signIn: "/auth/signin",
+    signOut: "/auth/signout",
+    error: "/auth/error",
+  },
+} satisfies NextAuthOptions;
