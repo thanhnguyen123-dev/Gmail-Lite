@@ -5,59 +5,27 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { api } from "~/trpc/react";
-import { useEffect, useState } from "react";
-import NavBar from "./_components/NavBar";
+import { useEffect } from "react";
+import {useRouter} from "next/navigation";
 
 
-export default function Home() {
-  const { data: session } = useSession();
+export default function SignInPage() {
+  const router = useRouter();
+  const {data: session} = useSession();
+
+  useEffect(() => {
+    if (session) {
+      router.push("/threads");
+    }
+  }, [session, router]);
+
   const handleSignIn = async () => {
     await signIn("google");
   }
-
-  const { data: profile } = api.gmail.getProfile.useQuery();
-  const { data: threads } = api.gmail.getThreads.useQuery();
-
-  const [displayThreads, setDisplayThreads] = useState<any>(null);
-  const [displayProfile, setDisplayProfile] = useState<any>(null);
-
-  useEffect(() => {
-    if (threads) {
-      setDisplayThreads(JSON.parse(JSON.stringify(threads)));
-    }
-  }, [threads]);
-
-  useEffect(() => {
-    if (profile) {
-      setDisplayProfile(JSON.parse(JSON.stringify(profile)));
-    }
-  }, [profile]);
   
-  if (!session) {
     return (
       <div className="flex h-screen items-center justify-center">
         <button className="rounded-md bg-blue-500 px-4 py-2 text-white" onClick={handleSignIn}>Sign in</button>
       </div>
     );
-  }
-  
-  // console.log(displayProfile);
-  console.log(displayThreads);
-
-  return (
-    <main className="flex h-screen flex-col w-full items-center">
-      <NavBar />
-      <div className="flex flex-col w-full gap-2 py-2 px-8 overflow-y-auto">
-        {displayThreads?.threads.map((thread: any) => {
-          return (
-            <div key={thread.id} className="w-full border border-slate-200 rounded-md p-2 font-semibold">
-              <h1>{thread.snippet}</h1>
-            </div>
-          )
-        })}
-      </div>
-
-    </main>
-  );
 }
