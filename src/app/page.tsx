@@ -7,6 +7,8 @@
 import { useSession, signIn } from "next-auth/react";
 import { api } from "~/trpc/react";
 import { useEffect, useState } from "react";
+import NavBar from "./_components/NavBar";
+
 
 export default function Home() {
   const { data: session } = useSession();
@@ -22,13 +24,13 @@ export default function Home() {
 
   useEffect(() => {
     if (threads) {
-      setDisplayThreads(JSON.stringify(threads, null, 2));
+      setDisplayThreads(JSON.parse(JSON.stringify(threads)));
     }
   }, [threads]);
 
   useEffect(() => {
     if (profile) {
-      setDisplayProfile(JSON.stringify(profile, null, 2));
+      setDisplayProfile(JSON.parse(JSON.stringify(profile)));
     }
   }, [profile]);
   
@@ -44,8 +46,18 @@ export default function Home() {
   console.log(displayThreads);
 
   return (
-    <main className="flex h-screen flex-col">
-      <h1>Hello {session.user?.name}</h1>
+    <main className="flex h-screen flex-col w-full items-center">
+      <NavBar />
+      <div className="flex flex-col w-full gap-2 py-2 px-8 overflow-y-auto">
+        {displayThreads?.threads.map((thread: any) => {
+          return (
+            <div key={thread.id} className="w-full border border-slate-200 rounded-md p-2 font-semibold">
+              <h1>{thread.snippet}</h1>
+            </div>
+          )
+        })}
+      </div>
+
     </main>
   );
 }
