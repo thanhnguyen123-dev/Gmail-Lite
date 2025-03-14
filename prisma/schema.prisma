@@ -65,7 +65,6 @@ model User {
     sessions      Session[]
     posts         Post[]
     threads       Thread[]
-    messages      Message[]
     profile       Profile?
 }
 
@@ -94,8 +93,37 @@ model Message {
     labelIds        String[]
     snippet         String
     historyId       String
-    internalDate    DateTime
-    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId          String
+    internalDate    String
+    payload         MessagePart[]
+    sizeEstimate    Int
+    raw             String
 }
 
+model MessagePart {
+    partId        String @id @default(cuid())
+    mimeType      String
+    fileName      String
+    headers       Header[]
+    body          MessagePartBody?
+    parts         MessagePart[] @relation("MessagePartToMessagePart")
+    parentPart    MessagePart? @relation("MessagePartToMessagePart", fields: [parentPartId], references: [partId], onDelete: Cascade)
+    parentPartId  String?
+    message       Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+    messageId     String
+}
+model Header {
+    id          String @id @default(cuid())
+    name        String
+    value       String
+    messagePart MessagePart @relation(fields: [messagePartId], references: [partId], onDelete: Cascade)
+    messagePartId String
+}
+
+model MessagePartBody {
+    id              String @id @default(cuid())
+    attachmentId    String 
+    size            Int
+    data            String
+    messagePart     MessagePart @relation(fields: [messagePartId], references: [partId], onDelete: Cascade)
+    messagePartId   String @unique
+}

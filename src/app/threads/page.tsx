@@ -32,7 +32,7 @@ export default function Home() {
   useEffect(() => {
     if (profile) {
       setDisplayProfile(JSON.parse(JSON.stringify(profile)));
-    }
+    }    
   }, [profile]);
   
   if (!session) {
