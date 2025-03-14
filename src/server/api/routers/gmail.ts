@@ -6,60 +6,11 @@
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { db } from "~/server/db";
 
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
 export const gmailRouter = createTRPCRouter({
-  syncThreads: protectedProcedure
-    .mutation(async ({ctx}) => {
-      if (!ctx.session.accessToken) {
-        throw new Error("No access token found");
-      }
-      const response = await fetch(`${SERVICE_ENDPOINT}/me/threads`, {
-        headers: {
-          Authorization: `Bearer ${ctx.session.accessToken}`,
-        },
-      });
-      const data = await response.json();
-
-      for (const thread of data.threads) {
-        const threadDetails = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}`, {
-          headers: {
-            Authorization: `Bearer ${ctx.session.accessToken}`,
-          },
-        }).then(res => res.json());
-        await ctx.db.thread.upsert({
-          where: { id: thread.id },
-          update: {
-            snippet: threadDetails.snippet,
-          },
-          create: {
-            id: thread.id,
-            snippet: threadDetails.snippet,
-            userId: ctx.session.user.id,
-            historyId: threadDetails.historyId,
-            messages: {
-              create: threadDetails.messages.map((message: any) => ({
-                id: message.id,
-                threadId: thread.id,
-                labelIds: message.labelIds,
-                snippet: message.snippet,
-                historyId: message.historyId,
-                internalDate: message.internalDate,
-                raw: message.raw ?? "",
-              }))
-            }
-          }
-        })
-      }
-
-      return {
-        success: true,
-        message: "Threads synced",
-        data: data.threads
-      }
-    }),
-
   getThreads: protectedProcedure
     .input(z.object({
       maxResults: z.number().optional(),
@@ -100,8 +51,97 @@ export const gmailRouter = createTRPCRouter({
   getThread: protectedProcedure
     .input(z.object({id: z.string()}))
     .query(async ({ctx, input}) => {
+      const response = await fetch(`${SERVICE_ENDPOINT}/me/threads/${input.id}`, {
+        headers: {
+          Authorization: `Bearer ${ctx.session.accessToken}`,
+        },
+      });
+      const data = await response.json();
+      return data;
+    }),
+  syncEmails: protectedProcedure
+    .mutation(async ({ctx}) => {
       if (!ctx.session.accessToken) {
         throw new Error("No access token found");
       }
-    }),
+
+      const user = await db.user.findUnique({
+        where: {
+          id: ctx.session.user.id,
+        }
+      })
+
+      let pageToken: string | undefined;
+      let totalProcessed = 0;
+
+      const batchSize = 100;
+
+      try {
+        do {
+          const threadListResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads`, {
+            headers: {
+              Authorization: `Bearer ${ctx.session.accessToken}`,
+            },
+          });
+
+          const threadListData = await threadListResponse.json();
+          for (const thread of threadListData.threads ?? []) {
+            const threadResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}`, {
+              headers: {
+                Authorization: `Bearer ${ctx.session.accessToken}`,
+              },
+            });
+            const threadData = await threadResponse.json();
+            
+            await db.thread.upsert({
+              where: { id: threadData.id },
+              create: {
+                id: threadData.id,
+                snippet: threadData.snippet ?? '',
+                historyId: threadData.historyId ?? '',
+                userId: user?.id ?? '',
+                messages: {
+                  create: threadData.messages?.map((message: any) => ({
+                    id: message.id,
+                    labelIds: message.labelIds,
+                    snippet: message.snippet ?? '',
+                    historyId: message.historyId ?? '',
+                    internalDate: message.internalDate ?? '',
+                    raw: message.raw ?? '',
+                  }))
+                }
+              },
+              update: {
+                snippet: threadData.snippet ?? '',
+                historyId: threadData.historyId ?? '',
+                messages: {
+                  deleteMany: {},
+                  create: threadData?.messages?.map((message: any) => ({
+                    id: message.id,
+                    labelIds: message.labelIds,
+                    snippet: message.snippet ?? '',
+                    historyId: message.historyId ?? '',
+                    internalDate: message.internalDate ?? '',
+                    raw: message.raw ?? '',
+                  }))
+                }
+              }
+            });
+
+            totalProcessed++;
+          }
+          pageToken = threadListData.nextPageToken;
+        } while (pageToken);
+
+        return {
+          success: true,
+          totalSynced: totalProcessed,
+        }
+      } catch (error) {
+        console.error('Error syncing emails:', error);
+        throw error;
+      }
+      
+    })
+  
 });

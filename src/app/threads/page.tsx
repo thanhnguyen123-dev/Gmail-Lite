@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import NavBar from "../_components/NavBar";
 import SideBar from "../_components/SideBar";
 import Threads from "../_components/Threads";
+import SyncButton from "../_components/SyncButton";
   
 
 export default function Home() {

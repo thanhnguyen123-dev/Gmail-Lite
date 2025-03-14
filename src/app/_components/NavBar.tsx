@@ -5,6 +5,8 @@ import { SiGmail } from "react-icons/si";
 import SearchBar from './SearchBar';
 import Avatar from './Avatar';
 import { useRouter } from 'next/navigation';
+import SyncButton from './SyncButton';
+
 const NavBar = () => {
   const router = useRouter();
   const handleClick = () => {
@@ -19,6 +21,7 @@ const NavBar = () => {
       </div>
       <SearchBar />
       <Avatar />
+      <SyncButton />
     </div>
   );
 }
