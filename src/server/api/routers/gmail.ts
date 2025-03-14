@@ -48,6 +48,15 @@ export const gmailRouter = createTRPCRouter({
 
       return data;
     }),
+  getThreadsDb: protectedProcedure
+    .query(async ({ctx}) => {
+      const threads = await ctx.db.thread.findMany({
+        include: {
+          messages: true,
+        }
+      });
+      return threads;
+    }),
   getThread: protectedProcedure
     .input(z.object({id: z.string()}))
     .query(async ({ctx, input}) => {
@@ -78,7 +87,15 @@ export const gmailRouter = createTRPCRouter({
 
       try {
         do {
-          const threadListResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads`, {
+          const params = new URLSearchParams({
+            maxResults: batchSize.toString(),
+            labelIds: 'INBOX',
+            includeSpamTrash: 'false',
+          });
+          if (pageToken) {
+            params.set('pageToken', pageToken);
+          }
+          const threadListResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads?${params.toString()}`, {
             headers: {
               Authorization: `Bearer ${ctx.session.accessToken}`,
             },
@@ -86,7 +103,7 @@ export const gmailRouter = createTRPCRouter({
 
           const threadListData = await threadListResponse.json();
           for (const thread of threadListData.threads ?? []) {
-            const threadResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}`, {
+            const threadResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}?${params.toString()}`, {
               headers: {
                 Authorization: `Bearer ${ctx.session.accessToken}`,
               },

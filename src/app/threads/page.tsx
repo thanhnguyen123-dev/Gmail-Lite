@@ -11,7 +11,7 @@ import NavBar from "../_components/NavBar";
 import SideBar from "../_components/SideBar";
 import Threads from "../_components/Threads";
 import SyncButton from "../_components/SyncButton";
-  
+import { type Thread } from "@prisma/client";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -25,16 +25,16 @@ export default function Home() {
     includeSpamTrash: false,
   });
 
-  const [displayThreads, setDisplayThreads] = useState<any>(null);
+  const { data: threadsDb } = api.gmail.getThreadsDb.useQuery();
+
+  const [displayThreads, setDisplayThreads] = useState<Thread[]>([]);
   const [displayProfile, setDisplayProfile] = useState<any>(null);
 
   useEffect(() => {
-    if (threads) {
-      setDisplayThreads(JSON.parse(JSON.stringify(threads)));
+    if (threadsDb) {
+      setDisplayThreads(threadsDb);
     }
-  }, [threads]);
-
-  
+  }, [threadsDb]);
   if (!session) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -53,7 +53,7 @@ export default function Home() {
       <NavBar />
       <div className="flex flex-grow w-full h-screen overflow-y-auto">
         <SideBar />
-        <Threads threads={displayThreads?.threads} />
+        <Threads threads={displayThreads} />
       </div>
     </main>
   );
