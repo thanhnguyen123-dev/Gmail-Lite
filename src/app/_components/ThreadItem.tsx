@@ -19,8 +19,6 @@ const ThreadItem = ({id, snippet, messages}: props) => {
     router.push(`/threads/${id}`);
   }
 
-  const raw = messages?.[0]?.raw;
-
   const labelIds = messages?.[0]?.labelIds;
 
 
@@ -30,7 +28,6 @@ const ThreadItem = ({id, snippet, messages}: props) => {
       key={id} 
       className="w-full border border-slate-200 rounded-md p-2 font-semibold hover:bg-slate-100" onClick={handleClick}>
       <span>{snippet}</span>
-      <span>{raw}</span>
       <div className="flex gap-2">
         {labelIds?.map((labelId: string) => (
           <ReceivedType key={labelId} receivedType={labelId} />

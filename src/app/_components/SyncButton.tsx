@@ -7,6 +7,7 @@ import { api } from "~/trpc/react";
 const SyncButton = () => {
   const [isSyncing, setIsSyncing] = useState(false);
 
+
   const syncMutation = api.gmail.syncEmails.useMutation({
     onSuccess: () => {
       setIsSyncing(false);
@@ -23,7 +24,7 @@ const SyncButton = () => {
 
 
   return (
-    <button onClick={handleSync}>sync</button>
+    <button onClick={handleSync} className="bg-slate-500 text-white text-sm px-4 py-1 rounded-md">sync</button>
   )
 }
 

@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import NavBar from "../_components/NavBar";
 import SideBar from "../_components/SideBar";
 import Threads from "../_components/Threads";
-import SyncButton from "../_components/SyncButton";
 import { type Thread } from "@prisma/client";
 
 export default function Home() {
@@ -22,7 +21,6 @@ export default function Home() {
   const { data: threads } = api.gmail.getThreads.useQuery();
 
   const [displayThreads, setDisplayThreads] = useState<Thread[]>([]);
-  const [displayProfile, setDisplayProfile] = useState<any>(null);
 
   useEffect(() => {
     if (threads) {

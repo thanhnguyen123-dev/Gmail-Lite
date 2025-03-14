@@ -13,7 +13,10 @@ const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 export const gmailRouter = createTRPCRouter({
   getThreads: protectedProcedure
     .query(async ({ctx}) => {
-      const threads = await ctx.db.thread.findMany({
+      const threads = await db.thread.findMany({
+        where: {
+          userId: ctx.session.user.id,
+        },
         include: {
           messages: true,
         }
@@ -54,69 +57,78 @@ export const gmailRouter = createTRPCRouter({
       const batchSize = 100;
 
       try {
-        do {
-          const params = new URLSearchParams({
-            maxResults: batchSize.toString(),
-            labelIds: 'INBOX',
-            includeSpamTrash: 'false',
-          });
-          if (pageToken) {
-            params.set('pageToken', pageToken);
-          }
-          const threadListResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads?${params.toString()}`, {
+        const params = new URLSearchParams({
+          maxResults: batchSize.toString(),
+          labelIds: 'INBOX',
+          includeSpamTrash: 'false',
+        });
+        if (pageToken) {
+          params.set('pageToken', pageToken);
+        }
+        const threadListResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${ctx.session.accessToken}`,
+          },
+        });
+
+        const threadListData = await threadListResponse.json();
+        for (const thread of threadListData.threads ?? []) {
+          const threadResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}?${"format=full"}`, {
             headers: {
               Authorization: `Bearer ${ctx.session.accessToken}`,
             },
           });
+          const threadData = await threadResponse.json();
 
-          const threadListData = await threadListResponse.json();
-          for (const thread of threadListData.threads ?? []) {
-            const threadResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}?${params.toString()}`, {
+          for (const message of threadData.messages ?? []) {
+            const messageResponse = await fetch(`${SERVICE_ENDPOINT}/me/messages/${message.id}?${"format=raw"}`, {
               headers: {
                 Authorization: `Bearer ${ctx.session.accessToken}`,
               },
             });
-            const threadData = await threadResponse.json();
-            
-            await db.thread.upsert({
-              where: { id: threadData.id },
-              create: {
-                id: threadData.id,
-                snippet: threadData.snippet ?? '',
-                historyId: threadData.historyId ?? '',
-                userId: user?.id ?? '',
-                messages: {
-                  create: threadData.messages?.map((message: any) => ({
-                    id: message.id,
-                    labelIds: message.labelIds,
-                    snippet: message.snippet ?? '',
-                    historyId: message.historyId ?? '',
-                    internalDate: message.internalDate ?? '',
-                    raw: message.raw ?? '',
-                  }))
-                }
-              },
-              update: {
-                snippet: threadData.snippet ?? '',
-                historyId: threadData.historyId ?? '',
-                messages: {
-                  deleteMany: {},
-                  create: threadData?.messages?.map((message: any) => ({
-                    id: message.id,
-                    labelIds: message.labelIds,
-                    snippet: message.snippet ?? '',
-                    historyId: message.historyId ?? '',
-                    internalDate: message.internalDate ?? '',
-                    raw: message.raw ?? '',
-                  }))
-                }
-              }
-            });
-
-            totalProcessed++;
+            const messageData = await messageResponse.json();
+            message.raw = messageData.raw;
           }
-          pageToken = threadListData.nextPageToken;
-        } while (pageToken);
+          
+          await db.thread.upsert({
+            where: { id: threadData.id },
+            create: {
+              id: threadData.id,
+              snippet: threadData.snippet ?? '',
+              historyId: threadData.historyId ?? '',
+              userId: user?.id ?? '',
+              messages: {
+                create: threadData.messages?.map((message: any) => ({
+                  id: message.id,
+                  labelIds: message.labelIds,
+                  snippet: message.snippet ?? '',
+                  historyId: message.historyId ?? '',
+                  internalDate: message.internalDate ?? '',
+                  raw: message.raw ?? '',
+                }))
+              }
+            },
+            update: {
+              snippet: threadData.snippet ?? '',
+              historyId: threadData.historyId ?? '',
+              messages: {
+                deleteMany: {},
+                create: threadData?.messages?.map((message: any) => ({
+                  id: message.id,
+                  labelIds: message.labelIds,
+                  snippet: message.snippet ?? '',
+                  historyId: message.historyId ?? '',
+                  internalDate: message.internalDate ?? '',
+                  raw: message.raw ?? '',
+                }))
+              }
+            }
+          });
+
+          totalProcessed++;
+        }
+        pageToken = threadListData.nextPageToken;
+      
 
         return {
           success: true,

@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import NavBar from '~/app/_components/NavBar';
 import { useParams } from 'next/navigation';
 import { api } from '~/trpc/react';
-import { type Thread, type Message } from '@prisma/client';
+import { type Message } from '@prisma/client';
 
 const ThreadPage = () => {
   const { thread_id } = useParams();
