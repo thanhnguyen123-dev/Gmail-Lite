@@ -8,7 +8,8 @@ import { useSession, signIn } from "next-auth/react";
 import { api } from "~/trpc/react";
 import { useEffect, useState } from "react";
 import NavBar from "../_components/NavBar";
-import ThreadItem from "../_components/ThreadItem";
+import SideBar from "../_components/SideBar";
+import Threads from "../_components/Threads";
   
 
 export default function Home() {
@@ -18,7 +19,11 @@ export default function Home() {
   }
 
   const { data: profile } = api.gmail.getProfile.useQuery();
-  const { data: threads } = api.gmail.getThreads.useQuery();
+  const { data: threads } = api.gmail.getThreads.useQuery({
+    maxResults: 10,
+    labelIds: ['INBOX'],
+    includeSpamTrash: false,
+  });
 
   const [displayThreads, setDisplayThreads] = useState<any>(null);
   const [displayProfile, setDisplayProfile] = useState<any>(null);
@@ -51,12 +56,13 @@ export default function Home() {
   return (
     <main className="flex h-screen flex-col w-full items-center">
       <NavBar />
-      <div className="flex flex-col w-full gap-2 py-2 px-8 overflow-y-auto">
-        {displayThreads?.threads.map((thread: any) => {
-          return (
-            <ThreadItem key={thread.id} id={thread.id} snippet={thread.snippet} messages={thread.messages} />
-          )
-        })}
+      <div className="flex flex-grow w-full h-screen overflow-y-auto">
+        <SideBar />
+        <div className="flex flex-col w-full">
+          <div className="flex gap-2"></div>
+
+        </div>
+        <Threads threads={displayThreads?.threads} />
       </div>
     </main>
   );

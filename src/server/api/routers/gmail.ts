@@ -48,7 +48,14 @@ export const gmailRouter = createTRPCRouter({
       return data;
     }),
   getThreads: protectedProcedure
-    .query(async ({ctx}) => {
+    .input(z.object({
+      maxResults: z.number().optional(),
+      pageToken: z.string().optional(),
+      q: z.string().optional(),
+      labelIds: z.array(z.string()).optional(),
+      includeSpamTrash: z.boolean().optional(),
+    }))
+    .query(async ({ctx, input}) => {
       if (!ctx.session.accessToken) {
         throw new Error("No access token found");
       }
@@ -57,6 +64,22 @@ export const gmailRouter = createTRPCRouter({
           Authorization: `Bearer ${ctx.session.accessToken}`,
         },
       });
+      const params = new URLSearchParams();
+      if (input.maxResults) {
+        params.set('maxResults', input.maxResults.toString());
+      }
+      if (input.pageToken) {
+        params.set('pageToken', input.pageToken);
+      }
+      if (input.q) {
+        params.set('q', input.q);
+      }
+      if (input.labelIds) {
+        params.set('labelIds', input.labelIds.join(','));
+      }
+      if (input.includeSpamTrash) {
+        params.set('includeSpamTrash', input.includeSpamTrash.toString());
+      }
       const data = await response.json();
       return data;
     }),

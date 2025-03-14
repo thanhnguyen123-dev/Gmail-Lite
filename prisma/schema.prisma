@@ -94,21 +94,21 @@ model Message {
     snippet         String
     historyId       String
     internalDate    String
-    payload         MessagePart[]
-    sizeEstimate    Int
+    // payload         MessagePart[]
+    // sizeEstimate    Int
     raw             String
 }
 
 model MessagePart {
     partId        String @id @default(cuid())
-    mimeType      String
+    // mimeType      String
     fileName      String
     headers       Header[]
-    body          MessagePartBody?
-    parts         MessagePart[] @relation("MessagePartToMessagePart")
-    parentPart    MessagePart? @relation("MessagePartToMessagePart", fields: [parentPartId], references: [partId], onDelete: Cascade)
-    parentPartId  String?
-    message       Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+    // body          MessagePartBody?
+    // parts         MessagePart[] @relation("MessagePartToMessagePart")
+    // parentPart    MessagePart? @relation("MessagePartToMessagePart", fields: [parentPartId], references: [partId], onDelete: Cascade)
+    // parentPartId  String?
+    // message       Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
     messageId     String
 }
 model Header {
@@ -124,6 +124,6 @@ model MessagePartBody {
     attachmentId    String 
     size            Int
     data            String
-    messagePart     MessagePart @relation(fields: [messagePartId], references: [partId], onDelete: Cascade)
+    // messagePart     MessagePart @relation(fields: [messagePartId], references: [partId], onDelete: Cascade)
     messagePartId   String @unique
 }
