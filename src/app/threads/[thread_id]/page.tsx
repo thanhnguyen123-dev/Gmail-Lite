@@ -7,21 +7,28 @@ import React, { useEffect, useState } from 'react';
 import NavBar from '~/app/_components/NavBar';
 import { useParams } from 'next/navigation';
 import { api } from '~/trpc/react';
+import { type Thread, type Message } from '@prisma/client';
 
 const ThreadPage = () => {
   const { thread_id } = useParams();
-  const { data: threadData } = api.gmail.getThread.useQuery(
-    { id: thread_id as string }
-  );
 
-  const [displayThread, setDisplayThread] = useState<any>(null);
+  const { data: messages } = api.gmail.getMessages.useQuery({
+    id: thread_id as string,
+  });
+
+  const [displayMessages, setDisplayMessages] = useState<Message[]>([]);
   useEffect(() => {
-    if (threadData) {
-      setDisplayThread(JSON.parse(JSON.stringify(threadData)));
+    if (messages) {
+      setDisplayMessages(messages);
     }
-  }, [threadData]);
+  }, [messages]);
 
-  console.log(displayThread);
+  console.log(thread_id);
+
+  console.log("display all raws")
+  for (const message of displayMessages) {
+    console.log(message.raw);
+  }
 
   return (
     <main className="flex h-screen flex-col w-full items-center">
@@ -29,9 +36,10 @@ const ThreadPage = () => {
       <div className="flex flex-col w-full gap-2 py-2 px-8 overflow-y-auto">
         <h1>Thread</h1>
         <div className="flex flex-col w-full gap-2">
-          {displayThread?.messages?.map((message: any) => (
+          {displayMessages?.map((message: any) => (
             <div key={message.id}>
               <h2>{message.snippet}</h2>
+              <h2>{message.raw}</h2>
             </div>
           ))}
         </div>

@@ -19,22 +19,16 @@ export default function Home() {
     await signIn("google");
   }
 
-  const { data: threads } = api.gmail.getThreads.useQuery({
-    maxResults: 10,
-    labelIds: ['INBOX'],
-    includeSpamTrash: false,
-  });
-
-  const { data: threadsDb } = api.gmail.getThreadsDb.useQuery();
+  const { data: threads } = api.gmail.getThreads.useQuery();
 
   const [displayThreads, setDisplayThreads] = useState<Thread[]>([]);
   const [displayProfile, setDisplayProfile] = useState<any>(null);
 
   useEffect(() => {
-    if (threadsDb) {
-      setDisplayThreads(threadsDb);
+    if (threads) {
+      setDisplayThreads(threads);
     }
-  }, [threadsDb]);
+  }, [threads]);
   if (!session) {
     return (
       <div className="flex h-screen items-center justify-center">

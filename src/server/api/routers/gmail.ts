@@ -12,43 +12,6 @@ const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
 export const gmailRouter = createTRPCRouter({
   getThreads: protectedProcedure
-    .input(z.object({
-      maxResults: z.number().optional(),
-      pageToken: z.string().optional(),
-      q: z.string().optional(),
-      labelIds: z.array(z.string()).optional(),
-      includeSpamTrash: z.boolean().optional(),
-    }))
-    .query(async ({ctx, input}) => {
-      if (!ctx.session.accessToken) {
-        throw new Error("No access token found");
-      }
-      const response = await fetch(`${SERVICE_ENDPOINT}/me/threads`, {
-        headers: {
-          Authorization: `Bearer ${ctx.session.accessToken}`,
-        },
-      });
-      const params = new URLSearchParams();
-      if (input.maxResults) {
-        params.set('maxResults', input.maxResults.toString());
-      }
-      if (input.pageToken) {
-        params.set('pageToken', input.pageToken);
-      }
-      if (input.q) {
-        params.set('q', input.q);
-      }
-      if (input.labelIds) {
-        params.set('labelIds', input.labelIds.join(','));
-      }
-      if (input.includeSpamTrash) {
-        params.set('includeSpamTrash', input.includeSpamTrash.toString());
-      }
-      const data = await response.json();
-
-      return data;
-    }),
-  getThreadsDb: protectedProcedure
     .query(async ({ctx}) => {
       const threads = await ctx.db.thread.findMany({
         include: {
@@ -60,13 +23,18 @@ export const gmailRouter = createTRPCRouter({
   getThread: protectedProcedure
     .input(z.object({id: z.string()}))
     .query(async ({ctx, input}) => {
-      const response = await fetch(`${SERVICE_ENDPOINT}/me/threads/${input.id}`, {
-        headers: {
-          Authorization: `Bearer ${ctx.session.accessToken}`,
-        },
+      const thread = await ctx.db.thread.findUnique({
+        where: { id: input.id },
       });
-      const data = await response.json();
-      return data;
+      return thread;
+    }),
+  getMessages: protectedProcedure
+    .input(z.object({id: z.string()}))
+    .query(async ({ctx, input}) => {
+      const messages = await ctx.db.message.findMany({
+        where: { threadId: input.id },
+      });
+      return messages;
     }),
   syncEmails: protectedProcedure
     .mutation(async ({ctx}) => {
