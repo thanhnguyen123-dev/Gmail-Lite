@@ -18,7 +18,6 @@ export default function Home() {
     await signIn("google");
   }
 
-  const { data: profile } = api.gmail.getProfile.useQuery();
   const { data: threads } = api.gmail.getThreads.useQuery({
     maxResults: 10,
     labelIds: ['INBOX'],
@@ -34,11 +33,6 @@ export default function Home() {
     }
   }, [threads]);
 
-  useEffect(() => {
-    if (profile) {
-      setDisplayProfile(JSON.parse(JSON.stringify(profile)));
-    }    
-  }, [profile]);
   
   if (!session) {
     return (
@@ -58,10 +52,6 @@ export default function Home() {
       <NavBar />
       <div className="flex flex-grow w-full h-screen overflow-y-auto">
         <SideBar />
-        <div className="flex flex-col w-full">
-          <div className="flex gap-2"></div>
-
-        </div>
         <Threads threads={displayThreads?.threads} />
       </div>
     </main>
