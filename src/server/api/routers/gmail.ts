@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -7,7 +9,9 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "~/server/db";
+import { BasicEvaluatedExpression } from "next/dist/compiled/webpack/webpack";
 
+const EmlParser = require('eml-parser')
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
 export const gmailRouter = createTRPCRouter({
@@ -139,6 +143,33 @@ export const gmailRouter = createTRPCRouter({
         throw error;
       }
       
-    })
+    }),
   
+  parseEmail: protectedProcedure
+    .input(z.object({raw: z.string()}))
+    .query(async ({input}) => {
+      let base64 = input.raw.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4) {
+        base64 += '=';
+      }
+      const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+      const parser = new EmlParser(decoded);
+      return new Promise((resolve, reject) => {
+        parser.parse((error: any, parsed: any) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve({
+            html: parsed.html,
+            text: parsed.text,
+            subject: parsed.subject,
+            from: parsed.from,
+            to: parsed.to,
+            date: parsed.date,
+            // attachments: parsed.attachments,
+          });
+        });
+      });
+    }),
 });

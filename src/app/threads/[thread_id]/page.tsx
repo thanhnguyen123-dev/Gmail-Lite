@@ -16,6 +16,7 @@ const ThreadPage = () => {
     id: thread_id as string,
   });
 
+
   const [displayMessages, setDisplayMessages] = useState<Message[]>([]);
   useEffect(() => {
     if (messages) {
@@ -39,7 +40,9 @@ const ThreadPage = () => {
           {displayMessages?.map((message: any) => (
             <div key={message.id}>
               <h2>{message.snippet}</h2>
-              <h2>{message.raw}</h2>
+              <p>
+                {}
+              </p>
             </div>
           ))}
         </div>
