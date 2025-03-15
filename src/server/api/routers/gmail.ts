@@ -57,7 +57,7 @@ export const gmailRouter = createTRPCRouter({
       });
       return messages;
     }),
-    syncEmails2: protectedProcedure.mutation(async ({ ctx }) => {
+    syncEmails: protectedProcedure.mutation(async ({ ctx }) => {
       if (!ctx.session.accessToken) {
         throw new Error("No access token found");
       }

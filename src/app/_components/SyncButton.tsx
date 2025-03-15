@@ -7,11 +7,12 @@ import { api } from "~/trpc/react";
 
 const SyncButton = () => {
   const [isSyncing, setIsSyncing] = useState(false);
+  const utils = api.useUtils();
 
-
-  const syncMutation = api.gmail.syncEmails2.useMutation({
+  const syncMutation = api.gmail.syncEmails.useMutation({
     onSuccess: () => {
       setIsSyncing(false);
+      void utils.gmail.getThreads.invalidate();
     },
     onError: () => {
       setIsSyncing(false);
