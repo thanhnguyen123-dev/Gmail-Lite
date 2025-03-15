@@ -6,9 +6,9 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "~/trpc/react";
 import Provider from "./provider";
 export const metadata: Metadata = {
-  title: "Gmail Wrapper",
-  description: "This is a full-stack app wrapping core Gmail functionality.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  title: "Gmail Lite",
+  description: "This is a lightweight Gmail wrapper.",
+  icons: [{ rel: "icon", url: "/gmail.svg" }],
 };
 
 export default function RootLayout({

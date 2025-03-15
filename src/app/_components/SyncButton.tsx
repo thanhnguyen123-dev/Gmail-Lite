@@ -25,9 +25,9 @@ const SyncButton = () => {
 
 
   return (
-    <button onClick={handleSync} className="text-slate-600 flex items-center justify-between gap-2 text-sm px-2 py-1 rounded-md hover:bg-slate-200">
+    <button onClick={handleSync} className="text-slate-600 flex items-center justify-between gap-2 text-[14px] px-2 py-1 rounded-md hover:bg-slate-200">
       <span>{isSyncing ? "Syncing..." : "Sync emails"}</span>
-      <IoMdSync className={`text-slate-600 ${isSyncing ? "animate-spin" : ""}`} />
+      <IoMdSync className={`text-slate-600 ${isSyncing ? "animate-spin" : ""}`} size={14} />
     </button>
   )
 }

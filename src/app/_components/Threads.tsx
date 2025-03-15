@@ -11,7 +11,7 @@ type props = {
 
 const Threads = ({ threads }: props) => {
   return (
-    <div className="flex flex-col w-full overflow-y-auto gap-2 py-2 px-8">
+    <div className="flex flex-col w-full overflow-y-auto gap-2 py-2 px-6">
       {threads?.map((thread: any) => {
         return (
           <ThreadItem key={thread.id} id={thread.id} messages={thread.messages} />

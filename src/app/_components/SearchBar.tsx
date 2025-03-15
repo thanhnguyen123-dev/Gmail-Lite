@@ -6,12 +6,12 @@ const SearchBar = () => {
     className="flex items-center w-[600px] border border-slate-200 rounded-full p-2 gap-3"
     >
       <svg
-        width="16"
-        height="16"
+        width="18"
+        height="18"
         viewBox="0 0 16 16"
         fill="currentColor"
       >
-        <use href="icons/icons_definitions.svg#MagnifyingGlass"></use>
+        <use href="/icons/icons_definitions.svg#MagnifyingGlass"></use>
       </svg>
       <input type="text" placeholder="Search" className="w-full h-full focus:outline-none" />
   
