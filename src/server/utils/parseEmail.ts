@@ -17,12 +17,18 @@ export async function parseRawEmail(rawBase64: string) {
     fromText = parsed.from.text;
   }
 
+  let toText = "";
+  if (Array.isArray(parsed.to) && parsed.to.length > 0) {
+    toText = parsed.to.map((address) => address.text).join(", ");
+  } else if (parsed.to && typeof parsed.to === 'object' && 'text' in parsed.to) {
+    toText = parsed.to.text;
+  }
+
   return {
     subject: parsed.subject ?? '',
     from: fromText,
-    to: parsed.to ?? '',
-    date: parsed.date ?? '',
-    text: parsed.text ?? '',
+    to: toText,
+    date: parsed.date ? new Date(parsed.date).toLocaleDateString() : '',
     html: parsed.html ?? '',
   }
 }

@@ -34,8 +34,7 @@ export default function ThreadItem({ id, messages }: Props) {
     <div
       role="button"
       onClick={handleClick}
-      className="flex justify-between w-full text-xs cursor-pointer items-center gap-2
-                 border border-slate-200 p-2 hover:bg-slate-100"
+      className="flex justify-between w-full text-xs cursor-pointer items-center gap-2 border border-slate-200 p-2 hover:bg-slate-100 rounded-lg"
     >
       <span className="w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
         {fromText}

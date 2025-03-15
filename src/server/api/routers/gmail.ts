@@ -11,7 +11,6 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { parseRawEmail } from "~/server/utils/parseEmail";
-import { parse } from "path";
 
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
@@ -133,7 +132,6 @@ export const gmailRouter = createTRPCRouter({
                 from: parsed.from,
                 to: parsed.to,
                 date: parsed.date,
-                text: parsed.text,
               };
             })
           );

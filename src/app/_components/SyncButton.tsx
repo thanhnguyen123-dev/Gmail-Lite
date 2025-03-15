@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IoMdSync } from "react-icons/io";
 
 import { api } from "~/trpc/react";
 
@@ -24,7 +25,10 @@ const SyncButton = () => {
 
 
   return (
-    <button onClick={handleSync} className="bg-slate-500 text-white text-sm px-4 py-1 rounded-md">sync</button>
+    <button onClick={handleSync} className="text-slate-600 flex items-center justify-between gap-2 text-sm px-2 py-1 rounded-md hover:bg-slate-200">
+      <span>{isSyncing ? "Syncing..." : "Sync emails"}</span>
+      <IoMdSync className={`text-slate-600 ${isSyncing ? "animate-spin" : ""}`} />
+    </button>
   )
 }
 
