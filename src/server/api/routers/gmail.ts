@@ -11,6 +11,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { parseRawEmail } from "~/server/utils/parseEmail";
+import { parse } from "path";
 
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
@@ -54,121 +55,6 @@ export const gmailRouter = createTRPCRouter({
         }
       });
       return messages;
-    }),
-  syncEmails: protectedProcedure
-    .mutation(async ({ctx}) => {
-      if (!ctx.session.accessToken) {
-        throw new Error("No access token found");
-      }
-
-      const user = await db.user.findUnique({
-        where: {
-          id: ctx.session.user.id,
-        }
-      })
-
-      let pageToken: string | undefined;
-      let totalProcessed = 0;
-
-      const batchSize = 100;
-
-      try {
-        const params = new URLSearchParams({
-          maxResults: batchSize.toString(),
-          labelIds: 'INBOX',
-          includeSpamTrash: 'false',
-        });
-        if (pageToken) {
-          params.set('pageToken', pageToken);
-        }
-        const threadListResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads?${params.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${ctx.session.accessToken}`,
-          },
-        });
-
-        const threadListData = await threadListResponse.json();
-        for (const thread of threadListData.threads ?? []) {
-          const threadResponse = await fetch(`${SERVICE_ENDPOINT}/me/threads/${thread.id}?${"format=full"}`, {
-            headers: {
-              Authorization: `Bearer ${ctx.session.accessToken}`,
-            },
-          });
-          const threadData = await threadResponse.json();
-
-          for (const message of threadData.messages ?? []) {
-            const fullResponse = await fetch(`${SERVICE_ENDPOINT}/me/messages/${message.id}?${"format=full"}`, {
-              headers: {
-                Authorization: `Bearer ${ctx.session.accessToken}`,
-              },
-            });
-            const fullData = await fullResponse.json();
-            
-            const fromHeader = fullData.payload.headers.find((header: any) => header.name.toLowerCase() === "from")?.value;
-            const snippet = fullData.snippet;
-
-            const messageResponse = await fetch(`${SERVICE_ENDPOINT}/me/messages/${message.id}?${"format=raw"}`, {
-              headers: {
-                Authorization: `Bearer ${ctx.session.accessToken}`,
-              },
-            });
-            const messageData = await messageResponse.json();
-            message.raw = messageData.raw;
-            message.from = fromHeader;
-            message.snippet = snippet;
-          }
-          
-          await db.thread.upsert({
-            where: { id: threadData.id },
-            create: {
-              id: threadData.id,
-              snippet: threadData.snippet ?? '',
-              historyId: threadData.historyId ?? '',
-              userId: user?.id ?? '',
-              messages: {
-                create: threadData.messages?.map((message: any) => ({
-                  id: message.id,
-                  labelIds: message.labelIds,
-                  snippet: message.snippet ?? '',
-                  historyId: message.historyId ?? '',
-                  internalDate: message.internalDate ?? '',
-                  raw: message.raw ?? '',
-                  from: message.from ?? '',
-                }))
-              }
-            },
-            update: {
-              snippet: threadData.snippet ?? '',
-              historyId: threadData.historyId ?? '',
-              messages: {
-                deleteMany: {},
-                create: threadData?.messages?.map((message: any) => ({
-                  id: message.id,
-                  labelIds: message.labelIds,
-                  snippet: message.snippet ?? '',
-                  historyId: message.historyId ?? '',
-                  internalDate: message.internalDate ?? '',
-                  raw: message.raw ?? '',
-                  from: message.from ?? '',
-                }))
-              }
-            }
-          });
-
-          totalProcessed++;
-        }
-        pageToken = threadListData.nextPageToken;
-      
-
-        return {
-          success: true,
-          totalSynced: totalProcessed,
-        }
-      } catch (error) {
-        console.error('Error syncing emails:', error);
-        throw error;
-      }
-      
     }),
     syncEmails2: protectedProcedure.mutation(async ({ ctx }) => {
       if (!ctx.session.accessToken) {
@@ -242,6 +128,7 @@ export const gmailRouter = createTRPCRouter({
                 raw: messageData.raw ?? "",
                 subject: parsed.subject,
                 htmlBody: parsed.html,
+                from: parsed.from,
               };
             })
           );
