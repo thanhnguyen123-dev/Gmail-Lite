@@ -10,16 +10,19 @@ type props = {
   id: string;
   snippet: string;
   messages: Message[];
+  from?: string;
 }
 
 
-const ThreadItem = ({id, snippet, messages}: props) => {  
+const ThreadItem = ({id, snippet, messages, from}: props) => {  
   const router = useRouter();
   const handleClick = () => {
     router.push(`/threads/${id}`);
   }
 
   const labelIds = messages?.[0]?.labelIds;
+
+  console.log("From: ", from);
 
 
   return (
@@ -28,6 +31,7 @@ const ThreadItem = ({id, snippet, messages}: props) => {
       key={id} 
       className="w-full border border-slate-200 rounded-md p-2 font-semibold hover:bg-slate-100" onClick={handleClick}>
       <span>{snippet}</span>
+      <span>{from}</span>
       <div className="flex gap-2">
         {labelIds?.map((labelId: string) => (
           <ReceivedType key={labelId} receivedType={labelId} />

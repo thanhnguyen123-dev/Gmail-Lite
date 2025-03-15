@@ -97,6 +97,7 @@ model Message {
     raw             String
     subject         String?
     htmlBody        String?
+    from            String?
 }
 
 model MessagePart {

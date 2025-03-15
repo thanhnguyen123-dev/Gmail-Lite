@@ -14,7 +14,7 @@ const Threads = ({ threads }: props) => {
     <div className="flex flex-col w-full overflow-y-auto gap-2 py-2 px-8">
       {threads?.map((thread: any) => {
         return (
-          <ThreadItem key={thread.id} id={thread.id} snippet={thread.messages?.[0]?.snippet} messages={thread.messages} />
+          <ThreadItem key={thread.id} id={thread.id} snippet={thread.messages?.[0]?.snippet} messages={thread.messages} from={thread.messages?.[0]?.from} />
         )
       })}
     </div>

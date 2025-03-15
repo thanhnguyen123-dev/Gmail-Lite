@@ -32,6 +32,9 @@ export const gmailRouter = createTRPCRouter({
     .query(async ({ctx, input}) => {
       const thread = await ctx.db.thread.findUnique({
         where: { id: input.id },
+        include: {
+          messages: true,
+        }
       });
       return thread;
     }),
@@ -40,6 +43,15 @@ export const gmailRouter = createTRPCRouter({
     .query(async ({ctx, input}) => {
       const messages = await ctx.db.message.findMany({
         where: { threadId: input.id },
+        select: {
+          id: true,
+          snippet: true,
+          from: true,
+          raw: true,
+          subject: true,
+          htmlBody: true,
+          internalDate: true,
+        }
       });
       return messages;
     }),
@@ -85,6 +97,16 @@ export const gmailRouter = createTRPCRouter({
           const threadData = await threadResponse.json();
 
           for (const message of threadData.messages ?? []) {
+            const fullResponse = await fetch(`${SERVICE_ENDPOINT}/me/messages/${message.id}?${"format=full"}`, {
+              headers: {
+                Authorization: `Bearer ${ctx.session.accessToken}`,
+              },
+            });
+            const fullData = await fullResponse.json();
+            
+            const fromHeader = fullData.payload.headers.find((header: any) => header.name.toLowerCase() === "from")?.value;
+            const snippet = fullData.snippet;
+
             const messageResponse = await fetch(`${SERVICE_ENDPOINT}/me/messages/${message.id}?${"format=raw"}`, {
               headers: {
                 Authorization: `Bearer ${ctx.session.accessToken}`,
@@ -92,6 +114,8 @@ export const gmailRouter = createTRPCRouter({
             });
             const messageData = await messageResponse.json();
             message.raw = messageData.raw;
+            message.from = fromHeader;
+            message.snippet = snippet;
           }
           
           await db.thread.upsert({
@@ -109,6 +133,7 @@ export const gmailRouter = createTRPCRouter({
                   historyId: message.historyId ?? '',
                   internalDate: message.internalDate ?? '',
                   raw: message.raw ?? '',
+                  from: message.from ?? '',
                 }))
               }
             },
@@ -124,6 +149,7 @@ export const gmailRouter = createTRPCRouter({
                   historyId: message.historyId ?? '',
                   internalDate: message.internalDate ?? '',
                   raw: message.raw ?? '',
+                  from: message.from ?? '',
                 }))
               }
             }
