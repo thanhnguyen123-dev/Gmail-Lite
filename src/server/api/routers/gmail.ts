@@ -52,6 +52,8 @@ export const gmailRouter = createTRPCRouter({
           subject: true,
           htmlBody: true,
           internalDate: true,
+          to: true,
+          date: true,
         }
       });
       return messages;
@@ -129,6 +131,9 @@ export const gmailRouter = createTRPCRouter({
                 subject: parsed.subject,
                 htmlBody: parsed.html,
                 from: parsed.from,
+                to: parsed.to,
+                date: parsed.date,
+                text: parsed.text,
               };
             })
           );

@@ -20,7 +20,7 @@ export async function parseRawEmail(rawBase64: string) {
   return {
     subject: parsed.subject ?? '',
     from: fromText,
-    to: parsed.to ?? [],
+    to: parsed.to ?? '',
     date: parsed.date ?? '',
     text: parsed.text ?? '',
     html: parsed.html ?? '',

@@ -98,6 +98,8 @@ model Message {
     subject         String?
     htmlBody        String?
     from            String?
+    to              String?
+    date            String?
 }
 
 model MessagePart {
