@@ -8,7 +8,7 @@ const SyncButton = () => {
   const [isSyncing, setIsSyncing] = useState(false);
 
 
-  const syncMutation = api.gmail.syncEmails.useMutation({
+  const syncMutation = api.gmail.syncEmails2.useMutation({
     onSuccess: () => {
       setIsSyncing(false);
     },

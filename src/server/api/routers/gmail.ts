@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -9,9 +10,8 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "~/server/db";
-import { BasicEvaluatedExpression } from "next/dist/compiled/webpack/webpack";
+import { parseRawEmail } from "~/server/utils/parseEmail";
 
-const EmlParser = require('eml-parser')
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
 export const gmailRouter = createTRPCRouter({
@@ -144,32 +144,115 @@ export const gmailRouter = createTRPCRouter({
       }
       
     }),
-  
-  parseEmail: protectedProcedure
-    .input(z.object({raw: z.string()}))
-    .query(async ({input}) => {
-      let base64 = input.raw.replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4) {
-        base64 += '=';
+    syncEmails2: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.session.accessToken) {
+        throw new Error("No access token found");
       }
-      const decoded = Buffer.from(base64, 'base64').toString('utf-8');
-      const parser = new EmlParser(decoded);
-      return new Promise((resolve, reject) => {
-        parser.parse((error: any, parsed: any) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve({
-            html: parsed.html,
-            text: parsed.text,
-            subject: parsed.subject,
-            from: parsed.from,
-            to: parsed.to,
-            date: parsed.date,
-            // attachments: parsed.attachments,
-          });
-        });
+  
+      const user = await db.user.findUnique({
+        where: { id: ctx.session.user.id },
       });
+  
+      let pageToken: string | undefined;
+      let totalProcessed = 0;
+      const batchSize = 100;
+  
+      try {
+        const params = new URLSearchParams({
+          maxResults: batchSize.toString(),
+          labelIds: "INBOX",
+          includeSpamTrash: "false",
+        });
+        if (pageToken) {
+          params.set("pageToken", pageToken);
+        }
+  
+        // Fetch list of threads
+        const threadListResponse = await fetch(
+          `${SERVICE_ENDPOINT}/me/threads?${params.toString()}`,
+          {
+            headers: {
+              Authorization: `Bearer ${ctx.session.accessToken}`,
+            },
+          }
+        );
+        const threadListData = await threadListResponse.json();
+  
+        for (const thread of threadListData.threads ?? []) {
+          // Fetch full thread details
+          const threadResponse = await fetch(
+            `${SERVICE_ENDPOINT}/me/threads/${thread.id}?format=full`,
+            {
+              headers: {
+                Authorization: `Bearer ${ctx.session.accessToken}`,
+              },
+            }
+          );
+          const threadData = await threadResponse.json();
+  
+          // Process each message in the thread
+          const messagesWithParsedData = await Promise.all(
+            (threadData.messages ?? []).map(async (message: any) => {
+              // Fetch raw message (format=raw)
+              const messageResponse = await fetch(
+                `${SERVICE_ENDPOINT}/me/messages/${message.id}?format=raw`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${ctx.session.accessToken}`,
+                  },
+                }
+              );
+              const messageData = await messageResponse.json();
+  
+              // Parse the raw message
+              const parsed = await parseRawEmail(messageData.raw);
+  
+              return {
+                id: message.id,
+                labelIds: message.labelIds,
+                snippet: message.snippet ?? "",
+                historyId: message.historyId ?? "",
+                internalDate: message.internalDate ?? "",
+                raw: messageData.raw ?? "",
+                subject: parsed.subject,
+                htmlBody: parsed.html,
+              };
+            })
+          );
+  
+          // Upsert the thread and its messages
+          await db.thread.upsert({
+            where: { id: threadData.id },
+            create: {
+              id: threadData.id,
+              snippet: threadData.snippet ?? "",
+              historyId: threadData.historyId ?? "",
+              userId: user?.id ?? "",
+              messages: {
+                create: messagesWithParsedData,
+              },
+            },
+            update: {
+              snippet: threadData.snippet ?? "",
+              historyId: threadData.historyId ?? "",
+              messages: {
+                deleteMany: {}, // Clear existing messages (you can optimize this later)
+                create: messagesWithParsedData,
+              },
+            },
+          });
+  
+          totalProcessed++;
+        }
+        pageToken = threadListData.nextPageToken;
+  
+        return {
+          success: true,
+          totalSynced: totalProcessed,
+        };
+      } catch (error) {
+        console.error("Error syncing emails:", error);
+        throw error;
+      }
     }),
 });

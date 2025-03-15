@@ -39,5 +39,4 @@
     ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"],
-  "types": ["node", "eml-parser"]
 }

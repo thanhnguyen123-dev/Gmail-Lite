@@ -94,9 +94,9 @@ model Message {
     snippet         String
     historyId       String
     internalDate    String
-    // payload         MessagePart[]
-    // sizeEstimate    Int
     raw             String
+    subject         String?
+    htmlBody        String?
 }
 
 model MessagePart {
