@@ -18,7 +18,9 @@ export default function Home() {
     await signIn("google");
   }
 
-  const { data: threads } = api.gmail.getThreads.useQuery();
+  const { data: threads } = api.gmail.getThreads.useQuery({
+    labelIds: "INBOX",
+  });
 
   const [displayThreads, setDisplayThreads] = useState<Thread[]>([]);
 
