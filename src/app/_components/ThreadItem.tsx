@@ -13,7 +13,7 @@ type Props = {
 export default function ThreadItem({ id, messages }: Props) {
   const router = useRouter();
   const handleClick = () => {
-    router.push(`/threads/${id}`);
+    router.push(`/inbox/${id}`);
   };
 
   const sortedMessages = [...messages].sort(

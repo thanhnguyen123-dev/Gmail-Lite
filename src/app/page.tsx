@@ -15,7 +15,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (session) {
-      router.push("/threads");
+      router.push("/inbox");
     }
   }, [session, router]);
 
