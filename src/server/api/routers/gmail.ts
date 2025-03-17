@@ -57,6 +57,49 @@ export const gmailRouter = createTRPCRouter({
       });
       return messages;
     }),
+    sendEmail: protectedProcedure
+      .input(z.object({
+        to: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        threadId: z.string().optional(),
+      }))
+      .mutation(async ({ctx, input}) => {
+        if (!ctx.session.accessToken) {
+          throw new Error("No access token found");
+        }
+
+        const emailLines = [
+          `From: ${ctx.session.user.email}`,
+          `To: ${input.to}`,
+          `Subject: ${input.subject}`,
+          'Content-Type: text/plain; charset=utf-8',
+        ];
+
+        if (input.threadId) {
+          emailLines.push(`In-Reply-To: ${input.threadId}`);
+          emailLines.push(`References: ${input.threadId}`);
+        }
+
+        emailLines.push("");
+        emailLines.push(input.body);
+
+        const encodedEmail = Buffer.from(emailLines.join("\n")).toString("base64");
+
+        const response = await fetch(`${SERVICE_ENDPOINT}/me/messages/send`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ctx.session.accessToken}`,
+          },
+          body: JSON.stringify({
+            raw: encodedEmail,
+            threadId: input.threadId,
+          }),
+        });
+
+        const responseData = await response.json();
+        return responseData;
+      }),
     syncEmails: protectedProcedure.mutation(async ({ ctx }) => {
       if (!ctx.session.accessToken) {
         throw new Error("No access token found");

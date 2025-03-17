@@ -16,7 +16,6 @@ export default function ThreadItem({ id, messages }: Props) {
     router.push(`/threads/${id}`);
   };
 
-  // Sort so the "lastMessage" is the newest
   const sortedMessages = [...messages].sort(
     (a, b) =>
       new Date(b.internalDate).getTime() -

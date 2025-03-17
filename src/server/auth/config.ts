@@ -61,7 +61,7 @@ export const authConfig = {
           prompt: "consent",
           access_type: "offline",
           response_type: "code",
-          scope: "openid profile email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify",
+          scope: "openid profile email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send",
         },
       },
     }),

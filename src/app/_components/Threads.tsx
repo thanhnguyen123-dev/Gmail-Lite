@@ -4,7 +4,7 @@
 import React from 'react'
 import ThreadItem from './ThreadItem';
 import { type Thread } from '@prisma/client';
-import { type Message } from '@prisma/client';
+
 type props = {
   threads: Thread[];
 }
