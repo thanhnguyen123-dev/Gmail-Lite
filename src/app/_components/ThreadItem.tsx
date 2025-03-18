@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import type { Message } from "@prisma/client";
 
 type Props = {
@@ -12,8 +12,9 @@ type Props = {
 
 export default function ThreadItem({ id, messages }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const handleClick = () => {
-    router.push(`/inbox/${id}`);
+    router.push(`${pathname}/${id}`);
   };
 
   const sortedMessages = [...messages].sort(
