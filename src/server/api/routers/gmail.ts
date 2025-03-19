@@ -11,7 +11,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { parseRawEmail } from "~/server/utils/parseEmail";
-
+import { s3Service } from "~/server/utils/s3Service";
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
 
 export const gmailRouter = createTRPCRouter({
@@ -69,6 +69,28 @@ export const gmailRouter = createTRPCRouter({
       });
       return messages;
     }),
+
+
+  getMessagesWithHtml: protectedProcedure
+    .input(z.object({ threadId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const messages = await ctx.db.message.findMany({
+        where: { threadId: input.threadId },
+        select: { id: true, htmlUrl: true }
+      });
+
+      const htmlMap: Record<string, string> = {};
+      for (const message of messages) {
+        if (message.htmlUrl) {
+          const key = "emails/" + message.htmlUrl.split("emails/")[1];
+          const html = await s3Service.fetchHtmlFromS3(key);
+          if (html) htmlMap[message.id] = html;
+        }
+      }
+      return htmlMap;
+    }),
+
+
 
   sendEmail: protectedProcedure
     .input(z.object({

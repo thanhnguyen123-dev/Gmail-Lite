@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
 class S3Service {
   private s3: S3Client;
@@ -24,11 +24,14 @@ class S3Service {
     return `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
   }
 
-  public async fetchHtmlFromS3(url: string | null) {
-    if (!url) return "";
+  public async fetchHtmlFromS3(key: string | null) {
+    if (!key) return "";
     try {
-      const response = await fetch(url);
-      const html = await response.text();
+      const response = await this.s3.send(new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      }));
+      const html = await response.Body?.transformToString();
       return html;
     } catch (error) {
       console.error("Error fetching HTML from S3:", error);
@@ -37,4 +40,7 @@ class S3Service {
   }
 }
 
-export const s3Service = new S3Service(process.env.AWS_BUCKET_NAME ?? "", process.env.AWS_REGION ?? "");
+export const s3Service = new S3Service(
+  process.env.AWS_BUCKET_NAME ?? "", 
+  process.env.AWS_REGION ?? ""
+);
