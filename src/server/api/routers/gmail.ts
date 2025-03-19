@@ -144,25 +144,29 @@ export const gmailRouter = createTRPCRouter({
 
     const user = await db.user.findUnique({
       where: { id: ctx.session.user.id },
+      select: {
+        id: true,
+        lastInboxPageToken: true,
+        lastSentPageToken: true,
+      }
     });
 
     let totalProcessed = 0;
-    const batchSize = 50;
-    
+    const batchSize = 10;
     const labels = ["INBOX", "SENT"];
     
     try {
       for (const label of labels) {
-        // eslint-disable-next-line prefer-const
-        let pageToken: string | undefined;
-        
         const params = new URLSearchParams({
           maxResults: batchSize.toString(),
-          labelIds: label, 
+          labelIds: label,
           includeSpamTrash: "false",
         });
-        if (pageToken) {
-          params.set("pageToken", pageToken);
+
+        if (label === "INBOX" && user?.lastInboxPageToken) {
+          params.set("pageToken", user.lastInboxPageToken);
+        } else if (label === "SENT" && user?.lastSentPageToken) {
+          params.set("pageToken", user.lastSentPageToken);
         }
 
         console.log(`Fetching threads for label: ${label}`);
@@ -269,7 +273,23 @@ export const gmailRouter = createTRPCRouter({
           totalProcessed++;
         }
 
+        if (threadListData.nextPageToken) {
+          await db.user.update({
+            where: { id: user?.id },
+            data: label === "INBOX" 
+              ? { lastInboxPageToken: threadListData.nextPageToken }
+              : { lastSentPageToken: threadListData.nextPageToken }
+          });
+        } else {
+          await db.user.update({
+            where: { id: user?.id },
+            data: label === "INBOX" 
+              ? { lastInboxPageToken: null }
+              : { lastSentPageToken: null }
+          });
+        }
       }
+
       return {
         success: true,
         totalSynced: totalProcessed,
