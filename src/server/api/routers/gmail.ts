@@ -33,6 +33,9 @@ export const gmailRouter = createTRPCRouter({
         },
         include: {
           messages: true,
+        },
+        orderBy: {
+          historyId: "desc",
         }
       });
       return threads;
@@ -146,7 +149,7 @@ export const gmailRouter = createTRPCRouter({
     });
 
     let totalProcessed = 0;
-    const batchSize = 10;
+    const batchSize = 50;
     
     const labels = ["INBOX", "SENT"];
     
@@ -263,7 +266,7 @@ export const gmailRouter = createTRPCRouter({
             totalProcessed++;
           }
 
-          pageToken = threadListData.nextPageToken;
+          // pageToken = threadListData.nextPageToken;
 
       }
 
