@@ -42,7 +42,7 @@ export default function ThreadPage() {
                   <span className="font-medium">{formatFrom(msg?.from)}</span>
                   <div className="flex gap-1 items-center">
                     <span className="text-sm text-gray-500">to me</span>
-                    <MailPopover from={msg.from} to={msg.to} date={msg.date} subject={msg.subject ?? "No Subject"} />
+                    <MailPopover from={msg.from} to={msg.to} date={msg.internalDate.toString()} subject={msg.subject ?? "No Subject"} />
                   </div>
                 </div>
               </div>

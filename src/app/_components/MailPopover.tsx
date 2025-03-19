@@ -1,6 +1,6 @@
 import * as Popover from '@radix-ui/react-popover';
 import { GoTriangleDown } from "react-icons/go";
-
+import formatDate from '../utils/formatDate';
 type MailPopoverProps = {
   from?: string | null;
   subject?: string | null;
@@ -13,6 +13,8 @@ const MailPopover = ({ from, date, subject, to }: MailPopoverProps) => {
     if (!from) return "";
     return from.replace(/['"]/g, '').trim();
   };
+
+
   return (
     <Popover.Root>
       <Popover.Trigger className="cursor-pointer hover:bg-gray-100 rounded p-1">
@@ -35,7 +37,7 @@ const MailPopover = ({ from, date, subject, to }: MailPopoverProps) => {
             </div>
             <div className="flex items-center">
               <span className="font-medium w-16 text-gray-600">Date:</span>
-              <span className="flex-1">{new Date(date ?? "").toLocaleString().split(",")[0]}</span>
+              <span className="flex-1">{formatDate(date ?? "")}</span>
             </div>
             <div className="flex items-center">
               <span className="font-medium w-16 text-gray-600">Subject:</span>

@@ -35,7 +35,7 @@ export const gmailRouter = createTRPCRouter({
           messages: true,
         },
         orderBy: {
-          historyId: "desc",
+          lastMessageDate: "desc",
         }
       });
       return threads;
@@ -215,7 +215,7 @@ export const gmailRouter = createTRPCRouter({
                     labelIds: message.labelIds,
                     snippet: message.snippet ?? "",
                     historyId: message.historyId ?? "",
-                    internalDate: message.internalDate ?? "",
+                    internalDate: new Date(Number(message.internalDate)) ?? "",
                     raw: messageData.raw ?? "",
                     subject: parsed.subject,
                     htmlUrl: htmlUrl,
@@ -230,7 +230,7 @@ export const gmailRouter = createTRPCRouter({
                     labelIds: message.labelIds ?? [],
                     snippet: message.snippet ?? "",
                     historyId: message.historyId ?? "",
-                    internalDate: message.internalDate ?? "",
+                    internalDate: new Date(Number(message.internalDate)) ?? "",
                     raw: "",
                     subject: "",
                     htmlUrl: null,
@@ -242,6 +242,13 @@ export const gmailRouter = createTRPCRouter({
               })
             );
 
+            let lastMessageDate: Date | null = null;
+            for ( const message of messagesWithParsedData) {
+              if (!lastMessageDate || message.internalDate > lastMessageDate) {
+                lastMessageDate = message.internalDate;
+              }
+            }
+
             await db.thread.upsert({
               where: { id: threadData.id },
               create: {
@@ -249,6 +256,7 @@ export const gmailRouter = createTRPCRouter({
                 snippet: threadData.snippet ?? "",
                 historyId: threadData.historyId ?? "",
                 userId: user?.id ?? "",
+                lastMessageDate: lastMessageDate ?? new Date(),
                 messages: {
                   create: messagesWithParsedData,
                 },
@@ -256,6 +264,7 @@ export const gmailRouter = createTRPCRouter({
               update: {
                 snippet: threadData.snippet ?? "",
                 historyId: threadData.historyId ?? "",
+                lastMessageDate: lastMessageDate ?? new Date(),
                 messages: {
                   deleteMany: {},
                   create: messagesWithParsedData,
