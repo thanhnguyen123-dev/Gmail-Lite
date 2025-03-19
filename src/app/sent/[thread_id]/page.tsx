@@ -7,10 +7,29 @@ import NavBar from "~/app/_components/NavBar";
 import SideBar from "~/app/_components/SideBar";
 import Image from "next/image";
 import MailPopover from "~/app/_components/MailPopover";
+import { s3Service } from "~/server/utils/s3Service";
+import { useEffect, useState } from "react";
 
 export default function ThreadPage() {
   const { thread_id } = useParams();
   const { data: messages } = api.gmail.getMessages.useQuery({ id: thread_id as string });
+  const [html, setHtml] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    async function fetchHtml() {
+      if (!messages) return;
+
+      const htmlContent: Record<string, string> = {};
+      for (const msg of messages) {
+        if (msg.htmlUrl) {
+          const html = await s3Service.fetchHtmlFromS3(msg.htmlUrl);
+          htmlContent[msg.id] = html;
+        }
+      }
+      setHtml(htmlContent); 
+    }
+    void fetchHtml();
+  }, [messages]);
 
   const formatFrom = (from: string | null) => {
     if (!from) return "";
@@ -39,7 +58,7 @@ export default function ThreadPage() {
               </div>
               <div
                 className="flex flex-col justify-center items-center mt-2"
-                dangerouslySetInnerHTML={{ __html: msg.htmlBody ?? "" }}
+                dangerouslySetInnerHTML={{ __html: html[msg.id] ?? "" }}
               />
             </div>
           )) : <div className="flex flex-col items-center justify-center h-screen">Loading...</div>}

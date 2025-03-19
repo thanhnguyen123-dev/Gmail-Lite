@@ -96,8 +96,7 @@ model Message {
     internalDate    String
     raw             String
     subject         String?
-    htmlBody        String?
-    htmlBodyUrl     String?
+    htmlUrl         String?
     from            String?
     to              String?
     date            String?

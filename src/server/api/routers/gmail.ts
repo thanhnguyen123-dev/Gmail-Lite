@@ -61,7 +61,7 @@ export const gmailRouter = createTRPCRouter({
           from: true,
           raw: true,
           subject: true,
-          htmlBody: true,
+          htmlUrl: true,
           internalDate: true,
           to: true,
           date: true,
@@ -182,8 +182,8 @@ export const gmailRouter = createTRPCRouter({
                   );
                   const messageData = await messageResponse.json();
 
-                  const parsed = await parseRawEmail(messageData.raw);
-                  const htmlBody = typeof parsed.html === 'string' ? parsed.html : null;
+                  const parsed = await parseRawEmail(messageData.raw, message.id);
+                  const htmlUrl = typeof parsed.html === 'string' ? parsed.html : null;
 
                   return {
                     id: message.id,
@@ -193,7 +193,7 @@ export const gmailRouter = createTRPCRouter({
                     internalDate: message.internalDate ?? "",
                     raw: messageData.raw ?? "",
                     subject: parsed.subject,
-                    htmlBody: htmlBody,
+                    htmlUrl: htmlUrl,
                     from: parsed.from,
                     to: parsed.to,
                     date: parsed.date,
@@ -208,7 +208,7 @@ export const gmailRouter = createTRPCRouter({
                     internalDate: message.internalDate ?? "",
                     raw: "",
                     subject: "",
-                    htmlBody: null,
+                    htmlUrl: null,
                     from: "",
                     to: "",
                     date: new Date().toLocaleDateString(),
