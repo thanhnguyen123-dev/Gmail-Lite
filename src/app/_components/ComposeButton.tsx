@@ -9,6 +9,7 @@ const ComposeButton = () => {
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [to, setTo] = useState("");
+  const [cc, setCc] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
 
@@ -20,6 +21,7 @@ const ComposeButton = () => {
   const sendMessageMutation = api.gmail.sendEmail.useMutation({
     onSuccess: () => {
       setTo("");
+      setCc("");
       setSubject("");
       setBody("");
       setIsComposeOpen(false);
@@ -35,9 +37,15 @@ const ComposeButton = () => {
       alert("Invalid email address, please try again!");
       return;
     }
+
+    if (cc && !cc.split(",").every(email => validateEmail(email.trim()))) {
+      alert("Invalid cc email address, please try again!");
+      return;
+    }
     
     await sendMessageMutation.mutateAsync({
       to,
+      cc,
       subject,
       body,
     });
@@ -103,6 +111,17 @@ const ComposeButton = () => {
                   onChange={(e) => setTo(e.target.value)}
                   className="flex-grow outline-none text-xs" 
                   placeholder="Recipient"
+                />
+              </div>
+
+              <div className="flex items-center border-b border-gray-200 px-4 py-2 w-full">
+                <label className="w-[15%] text-xs text-gray-600">Cc</label>
+                <input 
+                  type="text" 
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value)}
+                  className="flex-grow outline-none text-xs" 
+                  placeholder="Cc"
                 />
               </div>
 

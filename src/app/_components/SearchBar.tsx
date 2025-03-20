@@ -3,7 +3,7 @@ import React from 'react'
 const SearchBar = () => {
   return (
     <div 
-    className="flex items-center w-[600px] border border-slate-200 rounded-full p-2 gap-3"
+    className="flex items-center w-[500px] border border-slate-200 rounded-full p-2 gap-3"
     >
       <svg
         width="18"

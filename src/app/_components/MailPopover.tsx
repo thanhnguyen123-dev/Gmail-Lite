@@ -6,9 +6,10 @@ type MailPopoverProps = {
   subject?: string | null;
   date?: string | null;
   to?: string | null;
+  cc?: string | null;
 }
 
-const MailPopover = ({ from, date, subject, to }: MailPopoverProps) => {
+const MailPopover = ({ from, date, subject, to, cc }: MailPopoverProps) => {
   const formatFrom = (from: string | null) => {
     if (!from) return "";
     return from.replace(/['"]/g, '').trim();
@@ -35,6 +36,12 @@ const MailPopover = ({ from, date, subject, to }: MailPopoverProps) => {
               <span className="font-medium w-16 text-gray-600">To:</span>
               <span className="flex-1">{to}</span>
             </div>
+            {cc && (
+              <div className="flex items-center">
+                <span className="font-medium w-16 text-gray-600">Cc:</span>
+                <span className="flex-1">{cc}</span>
+              </div>
+            )}
             <div className="flex items-center">
               <span className="font-medium w-16 text-gray-600">Date:</span>
               <span className="flex-1">{formatDate(date ?? "")}</span>

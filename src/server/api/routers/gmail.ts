@@ -97,6 +97,7 @@ export const gmailRouter = createTRPCRouter({
   sendEmail: protectedProcedure
     .input(z.object({
       to: z.string(),
+      cc: z.string().optional(),
       subject: z.string(),
       body: z.string(),
       threadId: z.string().optional(),
@@ -109,9 +110,16 @@ export const gmailRouter = createTRPCRouter({
       const emailLines = [
         `From: ${ctx.session.user.email}`,
         `To: ${input.to}`,
+      ];
+      
+      if (input.cc) {
+        emailLines.push(`Cc: ${input.cc}`);
+      }
+
+      emailLines.push(
         `Subject: ${input.subject}`,
         'Content-Type: text/plain; charset=utf-8',
-      ];
+      );
 
       if (input.threadId) {
         emailLines.push(`In-Reply-To: ${input.threadId}`);
