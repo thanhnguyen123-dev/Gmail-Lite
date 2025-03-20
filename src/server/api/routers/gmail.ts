@@ -13,6 +13,7 @@ import { db } from "~/server/db";
 import { parseRawEmail } from "~/server/utils/parseEmail";
 import { s3Service } from "~/server/utils/s3Service";
 const SERVICE_ENDPOINT = "https://www.googleapis.com/gmail/v1/users";
+const BATCH_SIZE = 50;
 
 export const gmailRouter = createTRPCRouter({
   getThreads: protectedProcedure
@@ -152,13 +153,12 @@ export const gmailRouter = createTRPCRouter({
     });
 
     let totalProcessed = 0;
-    const batchSize = 10;
     const labels = ["INBOX", "SENT"];
     
     try {
       for (const label of labels) {
         const params = new URLSearchParams({
-          maxResults: batchSize.toString(),
+          maxResults: BATCH_SIZE.toString(),
           labelIds: label,
           includeSpamTrash: "false",
         });
