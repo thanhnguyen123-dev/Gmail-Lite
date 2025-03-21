@@ -6,6 +6,8 @@ import Avatar from './Avatar';
 import { useRouter } from 'next/navigation';
 import SyncButton from './SyncButton';
 import Image from 'next/image';
+import SyncNewButton from './FetchNewEmails';
+
 const NavBar = () => {
   const router = useRouter();
   const handleClick = () => {
@@ -26,6 +28,7 @@ const NavBar = () => {
       </div>
       <SearchBar />
       <div className="flex items-center gap-4">
+        <SyncNewButton />
         <SyncButton />
         <Avatar />
       </div>

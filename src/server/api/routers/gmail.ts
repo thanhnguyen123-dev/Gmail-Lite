@@ -307,4 +307,156 @@ export const gmailRouter = createTRPCRouter({
       throw error;
     }
   }),
+
+  syncNewEmails: protectedProcedure
+    .mutation(async ({ctx}) => {
+      if (!ctx.session.accessToken) {
+        throw new Error("No access token found");
+      }
+
+      try {
+        const user = await db.user.findUnique({
+          where: { id: ctx.session.user.id },
+          select: {
+            id: true,
+            email: true,
+          }
+        });
+
+        let totalProcessed = 0;
+        const labels = ["INBOX", "SENT"];
+
+        for (const label of labels) {
+          const params = new URLSearchParams({
+            maxResults: BATCH_SIZE.toString(),
+            labelIds: label,
+            includeSpamTrash: "false",
+          });
+
+          const threadListResponse = await fetch(
+            `${SERVICE_ENDPOINT}/me/threads?${params.toString()}`,
+            {
+              headers: {
+                Authorization: `Bearer ${ctx.session.accessToken}`,
+              },
+            }
+          );
+          const threadListData = await threadListResponse.json();
+
+          if (threadListData.threads && threadListData.threads.length > 0) {
+            for (const thread of threadListData.threads) {
+              const existingThread = await db.thread.findUnique({
+                where: { id: thread.id },
+              });
+
+              if (existingThread && existingThread?.historyId === thread.historyId) {
+                continue;
+              }
+              
+              const threadResponse = await fetch(
+                `${SERVICE_ENDPOINT}/me/threads/${thread.id}?format=full`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${ctx.session.accessToken}`,
+                  },
+                }
+              );
+              const threadData = await threadResponse.json();
+
+              const messagesWithParsedData = await Promise.all(
+                (threadData.messages ?? []).map(async (message: any) => {
+                  try {
+                    const messageResponse = await fetch(
+                      `${SERVICE_ENDPOINT}/me/messages/${message.id}?format=raw`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${ctx.session.accessToken}`,
+                        },
+                      }
+                    );
+                    const messageData = await messageResponse.json();
+
+                    const parsed = await parseRawEmail(messageData.raw, message.id);
+                    const htmlUrl = typeof parsed.html === 'string' ? parsed.html : null;
+
+                    return {
+                      id: message.id,
+                      labelIds: message.labelIds,
+                      snippet: message.snippet ?? "",
+                      historyId: message.historyId ?? "",
+                      internalDate: new Date(Number(message.internalDate)) ?? "",
+                      raw: messageData.raw ?? "",
+                      subject: parsed.subject,
+                      htmlUrl: htmlUrl,
+                      from: parsed.from,
+                      to: parsed.to,
+                      date: parsed.date,
+                    };
+                  } catch (error) {
+                    console.error(`Error processing message ${message.id}:`, error);
+                    return {
+                      id: message.id,
+                      labelIds: message.labelIds ?? [],
+                      snippet: message.snippet ?? "",
+                      historyId: message.historyId ?? "",
+                      internalDate: new Date(Number(message.internalDate)) ?? "",
+                      raw: "",
+                      subject: "",
+                      htmlUrl: null,
+                      from: "",
+                      to: "",
+                      date: new Date().toLocaleDateString(),
+                    }
+                  }
+                })
+              );
+
+              let lastMessageDate: Date | null = null;
+              for (const message of messagesWithParsedData) {
+                if (!lastMessageDate || message.internalDate > lastMessageDate) {
+                  lastMessageDate = message.internalDate;
+                }
+              }
+
+              await db.thread.upsert({
+                where: { id: thread.id },
+                create: {
+                  id: thread.id,
+                  snippet: thread.snippet ?? "",
+                  historyId: thread.historyId ?? "",
+                  userId: user?.id ?? "",
+                  lastMessageDate: lastMessageDate ?? new Date(),
+                  messages: {
+                    create: messagesWithParsedData,
+                  },
+                },
+                update: {
+                  snippet: thread.snippet ?? "",
+                  historyId: thread.historyId ?? "",
+                  lastMessageDate: lastMessageDate ?? new Date(),
+                  messages: {
+                    deleteMany: {},
+                    create: messagesWithParsedData,
+                  },
+                },
+              });
+
+              totalProcessed++;
+            }
+          }
+        }
+
+        return {
+          success: true,
+          totalProcessed: totalProcessed,
+        };
+
+      } catch (error) {
+        console.error("Error syncing new emails:", error);
+        throw error;
+      }
+      
+      
+    })
 });
+
