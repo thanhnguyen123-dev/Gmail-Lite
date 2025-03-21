@@ -455,8 +455,70 @@ export const gmailRouter = createTRPCRouter({
         console.error("Error syncing new emails:", error);
         throw error;
       }
-      
-      
+    }),
+  
+  getSearchedThreads: protectedProcedure
+    .input(z.object({
+      searchValue: z.string(),
+    }))
+    .query(async ({ctx, input}) => {
+      const { searchValue } = input;
+      if (!searchValue.trim()) {
+        return [];
+      } 
+
+      const threads = await db.thread.findMany({
+        where: {
+          userId: ctx.session.user.id,
+          OR: [
+            {
+              snippet: {
+                contains: searchValue,
+                mode: "insensitive",
+              },
+            },
+            {
+              messages: {
+                some: {
+                  OR: [
+                    {
+                      subject: {
+                        contains: searchValue,
+                        mode: "insensitive",
+                      },
+                    },
+                    {
+                      snippet: {
+                        contains: searchValue,
+                        mode: "insensitive",
+                      },
+                    },
+                    {
+                      from: {
+                        contains: searchValue,
+                        mode: "insensitive",
+                      },
+                    },
+                    {
+                      to: {
+                        contains: searchValue,
+                        mode: "insensitive",
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ]
+        },
+        include: {
+          messages: true,
+        },
+        orderBy: {
+          lastMessageDate: "desc",
+        },
+      });
+      return threads;
     })
 });
 
