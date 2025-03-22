@@ -19,19 +19,43 @@ export const gmailRouter = createTRPCRouter({
   getThreads: protectedProcedure
     .input(z.object({
       labelIds: z.string(),
+      searchValue: z.string().optional(),
     }))
     .query(async ({ctx, input}) => {
+      const { labelIds, searchValue } = input;
+
+      // if searchValue is not empty, filter threads by anything, whether it's the subject, from, or to, or body stuffs
+      const whereClause: any = {
+        userId: ctx.session.user.id,
+        messages: {
+          some: {
+            labelIds: {
+              has: labelIds,
+            }
+          }
+        }
+      }
+
+      if (searchValue) {
+        whereClause.OR = [
+          { snippet: { contains: searchValue, mode: "insensitive"}},
+          {
+            messages: {
+              some: {
+                OR: [
+                  { subject: { contains: searchValue, mode: "insensitive" } },
+                  { from: { contains: searchValue, mode: "insensitive" } },
+                  { to: { contains: searchValue, mode: "insensitive" } },
+                  { snippet: { contains: searchValue, mode: "insensitive" } },
+                ]
+              }
+            }
+          }
+        ]
+      }
+
       const threads = await db.thread.findMany({
-        where: {
-          userId: ctx.session.user.id,
-          messages: {
-            some: {
-              labelIds: {
-                has: input.labelIds,
-              },
-            },
-          },
-        },
+        where: whereClause,
         include: {
           messages: true,
         },
@@ -41,6 +65,7 @@ export const gmailRouter = createTRPCRouter({
       });
       return threads;
     }),
+  
 
   getThread: protectedProcedure
     .input(z.object({id: z.string()}))

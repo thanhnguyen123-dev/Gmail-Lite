@@ -7,8 +7,14 @@ import { useRouter } from 'next/navigation';
 import SyncButton from './SyncButton';
 import Image from 'next/image';
 import SyncNewButton from './FetchNewEmails';
+import { type Dispatch, type SetStateAction } from 'react';
 
-const NavBar = () => {
+type props = {
+  searchValue: string;
+  setSearchValue: Dispatch<SetStateAction<string>>;
+}
+
+const NavBar = ({ searchValue, setSearchValue }: props) => {
   const router = useRouter();
   const handleClick = () => {
     router.push('/inbox');
@@ -26,7 +32,10 @@ const NavBar = () => {
         <Image src="/gmail.svg" alt="gmail" width={24} height={24} />
         <h1 className="text-xl font-normal">Gmail Lite</h1>
       </div>
-      <SearchBar />
+      <SearchBar 
+        searchValue={searchValue}
+        setSearchValue={setSearchValue}
+      />
       <div className="flex items-center gap-4">
         <SyncNewButton />
         <SyncButton />

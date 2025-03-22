@@ -17,10 +17,19 @@ export default function Home() {
   const handleSignIn = async () => {
     await signIn("google");
   }
+  const [searchValue, setSearchValue] = useState<string>("");
 
-  const { data: threads } = api.gmail.getThreads.useQuery({
+  const { 
+    data: threads,
+    isLoading: isThreadsLoading,
+    isFetching: isThreadsFetching,
+    refetch: refetchThreads,
+  } = api.gmail.getThreads.useQuery({
     labelIds: "INBOX",
+    searchValue: searchValue,
   });
+
+
 
   const [displayThreads, setDisplayThreads] = useState<Thread[]>([]);
 
@@ -29,6 +38,9 @@ export default function Home() {
       setDisplayThreads(threads);
     }
   }, [threads]);
+
+
+
   if (!session) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -44,10 +56,17 @@ export default function Home() {
 
   return (
     <main className="flex h-screen flex-col w-full items-center">
-      <NavBar />
+      <NavBar 
+        searchValue={searchValue}
+        setSearchValue={setSearchValue}
+      />
       <div className="flex flex-grow w-full h-screen overflow-y-auto">
         <SideBar />
-        <Threads threads={displayThreads} />
+        <Threads 
+          threads={displayThreads ?? []} 
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+        />
       </div>
     </main>
   );
