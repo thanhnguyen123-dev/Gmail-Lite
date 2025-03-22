@@ -7,10 +7,16 @@ import NavBar from "~/app/_components/NavBar";
 import SideBar from "~/app/_components/SideBar";
 import Image from "next/image";
 import MailPopover from "~/app/_components/MailPopover";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import ReplyForm from "~/app/_components/ReplyForm";
 
-export default function ThreadPage() {
+
+type props = {
+  searchValue: string;
+  setSearchValue: Dispatch<SetStateAction<string>>;
+}
+
+export default function ThreadPage({ searchValue, setSearchValue }: props) {
   const { thread_id } = useParams();
   const { data: messages } = api.gmail.getMessages.useQuery({ id: thread_id as string });
   const { data: messagesWithHtml } = api.gmail.getMessagesWithHtml.useQuery({ threadId: thread_id as string });
@@ -34,7 +40,7 @@ export default function ThreadPage() {
 
   return (
     <main className="flex flex-col w-full h-screen items-center">
-      <NavBar />
+      <NavBar searchValue={searchValue} setSearchValue={setSearchValue} />
       <div className="flex justify-center flex-grow w-full h-screen overflow-y-auto">
         <SideBar />
         <div className="flex flex-col w-full overflow-y-auto px-8 py-4">

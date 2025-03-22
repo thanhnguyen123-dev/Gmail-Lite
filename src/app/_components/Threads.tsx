@@ -4,15 +4,12 @@
 import React from 'react'
 import ThreadItem from './ThreadItem';
 import { type Thread } from '@prisma/client';
-import { type Dispatch, type SetStateAction } from 'react';
 
 type props = {
   threads: Thread[];
-  searchValue: string;
-  setSearchValue: Dispatch<SetStateAction<string>>;
 }
 
-const Threads = ({ threads, searchValue, setSearchValue }: props) => {
+const Threads = ({ threads }: props) => {
   return (
     <div className="flex flex-col w-full overflow-y-auto gap-2 py-2 px-6">
       {threads?.map((thread: any) => {

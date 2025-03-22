@@ -12,7 +12,7 @@ import SideBar from "../_components/SideBar";
 import Threads from "../_components/Threads";
 import { type Thread } from "@prisma/client";
 
-export default function Home() {
+export default function Inbox() {
   const { data: session } = useSession();
   const handleSignIn = async () => {
     await signIn("google");
@@ -23,12 +23,10 @@ export default function Home() {
     data: threads,
     isLoading: isThreadsLoading,
     isFetching: isThreadsFetching,
-    refetch: refetchThreads,
-  } = api.gmail.getThreads.useQuery({
+    } = api.gmail.getThreads.useQuery({
     labelIds: "INBOX",
     searchValue: searchValue,
   });
-
 
 
   const [displayThreads, setDisplayThreads] = useState<Thread[]>([]);
@@ -39,8 +37,6 @@ export default function Home() {
     }
   }, [threads]);
 
-
-
   if (!session) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -48,11 +44,6 @@ export default function Home() {
       </div>
     );
   }
-
-  
-  
-  // console.log(displayProfile);
-  console.log(displayThreads);
 
   return (
     <main className="flex h-screen flex-col w-full items-center">
@@ -64,8 +55,6 @@ export default function Home() {
         <SideBar />
         <Threads 
           threads={displayThreads ?? []} 
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
         />
       </div>
     </main>
